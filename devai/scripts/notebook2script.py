@@ -24,7 +24,7 @@ def getSortedFiles(allFiles, upTo=None):
     ret = []
     if (allFiles==True): ret = glob.glob('*.ipynb') # Checks both that is bool type and that is True
     if (isinstance(allFiles,str)): ret = glob.glob(allFiles)
-    if 0==len(ret): 
+    if 0==len(ret):
         print('WARNING: No files found')
         return ret
     if upTo is not None: ret = [f for f in ret if str(f)<=str(upTo)]
@@ -34,8 +34,8 @@ def notebook2script(fname=None, allFiles=None, upTo=None):
     '''Finds cells starting with `#export` and puts them into a new module
        + allFiles: convert all files in the folder
        + upTo: convert files up to specified one included
-       
-       ES: 
+
+       ES:
        notebook2script --allFiles=True   # Parse all files
        notebook2script --allFiles=nb*   # Parse all files starting with nb*
        notebook2script --upTo=10   # Parse all files with (name<='10')
@@ -49,8 +49,8 @@ def notebook2script(fname=None, allFiles=None, upTo=None):
         print('Begin...')
         [notebook2scriptSingle(f) for f in getSortedFiles(allFiles,upTo)]
         print('...End')
-        
-        
+
+
 def notebook2scriptSingle(fname):
     "Finds cells starting with `#export` and puts them into a new module"
     fname = Path(fname)

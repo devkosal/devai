@@ -1,21 +1,14 @@
-from distutils.core import setup
-
-setup(name="base_code",
-    author="Dev Sharma",
-    author_email="devkosal@gmail.com",
-    url="https://github.com/devkosal/base_code",
-    packages=["base_code"])
-
 import setuptools
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="base_code",
+    name="devai",
     version="0.0.1",
     author="Dev Sharma",
-    author_email="devkosal@gmail.com",
+    license="MIT",
+    author_email="dev.sharma@columbia.edu",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/devkosal/base_code",
