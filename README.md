@@ -1,6 +1,6 @@
 # Intro
 
-This repo contains my methods, objects and tools for EDA and deep learning. Most of it is designed for deep learning tasks on top of PyTorch.
+This repo contains methods, objects and utilities for EDA and deep learning. Most of it is designed for deep learning tasks on top of PyTorch.
 
 Example usages:
 
