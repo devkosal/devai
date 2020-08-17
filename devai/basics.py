@@ -144,29 +144,37 @@ class Learner():
             self.cbs, key=lambda x: x._order): res = cb(cb_name) and res
         return res
 
-    def get_raw_preds(self, dataset="valid", return_x=False):
-        self("begin_epoch")
-        with torch.no_grad():
-            if dataset == "valid":
-                self.dl = self.data.valid_dl
-            elif dataset == "train":
-                self.dl = self.data.train_dl
-            else:
-                raise ValueError(
-                    f"{dataset} is not a valid dataset. Please enter either 'train' or 'valid'")
-            yps = []
-            ybs = []
-            if return_x:
-                xbs = []
-            for i, (xb, yb) in enumerate(tqdm(self.dl)):
-                self.iter = i
-                self.xb, learner.yb = xb, yb
-                self('begin_batch')
-                ybs.append(yb)
-                yps.append(self.model(self.xb))
-                if return_x:
-                    xbs.append(xb)
-        outputs = (yps, ybs,)
+
+def get_raw_preds(self, dataset="valid", return_x=False):
+    """
+    returns preds and actual values for y. 
+    Note that callbacks are not used in the prediction generation
+    """
+    with torch.no_grad():
+        if dataset == "valid":
+            self.dl = self.data.valid_dl
+        elif dataset == "train":
+            self.dl = self.data.train_dl
+        else:
+            raise ValueError(
+                f"{dataset} is not a valid dataset. Please enter either 'train' or 'valid'"
+            )
+        yps = []  # actual y
+        ybs = []  # predicted y
         if return_x:
-            outputs += (xbs,)
-        return outputs
+            xbs = []
+        for i, (xb, yb) in enumerate(tqdm(self.dl)):
+            self.iter = i
+            self.xb, self.yb = xb, yb
+            self("begin_batch")
+            ybs.append(yb)
+            yps.append(self.model(self.xb))
+            if return_x:
+                xbs.append(xb)
+    outputs = (
+        yps,
+        ybs,
+    )
+    if return_x:
+        outputs += (xbs,)
+    return outputs
