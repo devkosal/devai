@@ -1,3 +1,9 @@
+from datetime import datetime
+import logging
+from pdb import set_trace
+from fastprogress.fastprogress import format_time
+from fastprogress.fastprogress import master_bar, progress_bar
+import time
 import re
 from functools import partial
 from torch import tensor
@@ -6,11 +12,8 @@ import matplotlib.pyplot as plt
 import torch
 from devai.utils.ml import *
 from torch.distributions.beta import Beta
-import time
-from fastprogress.fastprogress import master_bar, progress_bar
-from fastprogress.fastprogress import format_time
-from pdb import set_trace
-import logging
+from torch.utils.tensorboard import SummaryWriter
+
 
 _camel_re1 = re.compile('(.)([A-Z][a-z]+)')
 _camel_re2 = re.compile('([a-z0-9])([A-Z])')
@@ -55,7 +58,7 @@ class TrainEvalCallback(Callback):
     def after_batch(self):
         if not self.in_train:
             return
-        # self.iters = len(dl) ie total # of batches. This allows us to keep track of the progress overall as the n.epochs increaes.
+        # self.iters = len(dl) ie total # of batches. This allows us to keep track of the progress overall as the n.epochs increaes. commented out bc its defined in all_batches()
         self.run.n_epochs += 1./self.iters
         self.run.n_iter += 1
 
@@ -275,7 +278,7 @@ def combine_scheds(pcts, scheds):
     pcts = torch.cumsum(pcts, 0)
 
     def _inner(pos):
-        idx = (pos >= pcts).nonzero().max()
+        idx = (pos >= pcts).nonzero(as_tuple=False).max()
         actual_pos = (pos-pcts[idx]) / (pcts[idx+1]-pcts[idx])
         return scheds[idx](actual_pos)
     return _inner
@@ -426,28 +429,58 @@ class TrainStatsCallback(Callback):
     """reports intermittent training stats based on update_freq_pct"""
     _order = 5
 
-    def __init__(self, update_freq_pct=.2):
+    def __init__(self, update_freq_pct=.2, email=None):
+        """
+        email: tuple: (from gmail user_id, to email address)
+        """
         self.update_freq_pct = update_freq_pct
         logging.basicConfig()
         self.logger = logging.getLogger()
         self.logger.setLevel(logging.INFO)
+        self.writer = SummaryWriter()
+        self.email = email
 
     def begin_epoch(self):
-        self.iter = 0
-        self.update_freq = int(self.update_freq_pct*len(self.dl))
-        assert self.update_freq > 0, f"stats update frequency - {self.update_freq} - is too low."
+        # assuming same batch size for train and valid
+        self.bs = self.data.train_dl.batch_size
+        # self.iters = len(self.dl)  # from basics
 
     def after_batch(self):
-        if not self.in_train:
-            return
-        self.iter += 1
-        if self.n_iter % self.update_freq == 0:
+        """
+        valid updates for tensdrboard are very experimental
+        """
+        self.update_freq = int(self.update_freq_pct*self.iters)
+        self.update_freq = max(self.update_freq, 1)
+        if self.in_train:
+            self.ds_name, self.raw_stats = "train", self.avg_stats.train_stats
+        else:
+            self.ds_name, self.raw_stats = "valid", self.avg_stats.valid_stats
+
+        self.last_iter = ((self.iters-self.bs) // self.bs) * self.bs
+
+        is_last_iter = self.iter == self.last_iter
+        if (self.in_train and self.iter % self.update_freq == 0) or is_last_iter:
             metric_names = [
-                "loss"] + [m.__name__ for m in self.qa_avg_stats.train_stats.metrics]
-            stats = self.qa_avg_stats.train_stats.avg_stats
+                "loss"] + [m.__name__ for m in self.raw_stats.metrics]
+            stats = self.raw_stats.avg_stats
             named_stats = {"loss": round(stats[0], 4)}
             for (n, st) in zip(metric_names[1:], stats[1:]):
                 named_stats[n] = round(st.item(), 5)
-
+            info = f"epoch {self.epoch} stats for {self.ds_name} iter {self.iter} out of {self.iters} iters are : {named_stats}"
             self.logger.info(
-                f"epoch {self.epoch} stats for iter {self.iter} out of {self.iters} iters are : {named_stats}")
+                info)
+            # tensorboard update
+            for stat, value in named_stats.items():
+                self.writer.add_scalar(
+                    stat+"/"+self.ds_name, value, self.n_epochs)
+            # email
+            if self.email and self.iter % min(self.update_freq*4, self.last_iter) == 0:
+                import yagmail
+                yag = yagmail.SMTP(self.email[0])
+                subject = str(datetime.today(
+                )) + "/".join([k for k in dict(self.model.named_children()).keys()])
+                yag.send(self.email[1], subject, info)
+
+    def after_fit(self):
+        self.writer.flush()
+        self.writer.close()

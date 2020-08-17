@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 print(setuptools.find_packages())
 setuptools.setup(
     name="devai",
-    version="0.0a1",
+    version="0.0a2",
     author="Dev Sharma",
     license="MIT",
     author_email="dev.sharma@columbia.edu",

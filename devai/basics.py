@@ -112,18 +112,21 @@ class Learner():
             self.opt = self.opt_func(self.splitter(self.model), lr=self.lr)
 
         try:
+            self.model.train()
             self.do_begin_fit(epochs)
             for epoch in range(epochs):
                 if not self.do_begin_epoch(epoch):
                     self.all_batches()
 
                 with torch.no_grad():
+                    self.model.eval()
                     self.dl = self.data.valid_dl
                     if not self('begin_validate'):
                         self.all_batches()
                 self('after_epoch')
 
         except CancelTrainException:
+            self.in_train = False  # added by dev 08.2020
             self('after_cancel_train')
         finally:
             self('after_fit')
