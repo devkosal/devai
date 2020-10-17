@@ -426,7 +426,11 @@ class QAAvgStatsCallback(AvgStatsCallback):
 
 
 class TrainStatsCallback(Callback):
-    """reports intermittent training stats based on update_freq_pct"""
+    """
+    - reports intermittent training stats based on update_freq_pct. 
+    - updates tensorboard files
+    - can send an email
+    """
     _order = 5
 
     def __init__(self, update_freq_pct=.2, email=None):

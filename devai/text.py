@@ -18,7 +18,7 @@ def parallel(func, arr, max_workers=4):
         return results
 
 
-class QATokenizerProcessor(Processor):
+class TokenizerProcessor(Processor):
     """tokenizer processor for input text"""
 
     def __init__(self, tok_func, max_sl, start_tok, end_tok, pre_rules=None, post_rules=None):
@@ -32,7 +32,7 @@ class QATokenizerProcessor(Processor):
     def __call__(self, items): return tqdm([self.proc1(x) for x in items])
 
 
-class QANumericalizeProcessor(Processor):
+class NumericalizeProcessor(Processor):
     """
     tokens to numeric ids processor
     only works with an existing vocab at the moment and min_freq is not accounted for

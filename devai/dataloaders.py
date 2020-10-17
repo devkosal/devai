@@ -113,12 +113,15 @@ class Processor():
 class CategoryProcessor(Processor):
     """label processor which creates a 'vocabulary' of uniques items in labels"""
 
-    def __init__(self): self.vocab = None
+    def __init__(self, vocab=None):
+        self.vocab = vocab
+        self.otoi = None
 
     def __call__(self, items):
         # The vocab is defined on the first use.
         if self.vocab is None:
             self.vocab = uniqueify(items)
+        if self.otoi is None:
             self.otoi = {v: k for k, v in enumerate(self.vocab)}
         return [self.proc1(o) for o in items]
 
@@ -196,9 +199,9 @@ def to_float_tensor(item): return item.float().div_(255.)
 to_float_tensor._order = 30
 
 
-class SquadTextList(ItemList):
+class TextList(ItemList):
     @classmethod
-    def from_df(cls, df, feat_cols, label_cols, sep_tok, test=False):
+    def from_df(cls, df, feat_cols, label_cols, sep_tok=" ", test=False):
         """
         converts a dataframe into an ItemList
         :param df: dataframe
@@ -206,12 +209,16 @@ class SquadTextList(ItemList):
         :param label_cols: label columns
         :param sep_tok: the tok which separates question and answer sequences
         :param test: whether the df is test or not, mainly to determine whether labels exist.
-        :return: Itemlist
+        :return: TextList of text features and their respective label 
         """
         feat_cols = listify(feat_cols)
         x = df[feat_cols[0]]
         for i in range(1, len(feat_cols)):
             x += f" {sep_tok} " + df[feat_cols[i]]
-        labels = cls(df[label_cols].values) if not test else cls(
-            [[None, None] for _ in len(df)])
+
+        labels = (
+            cls(df[label_cols].values)
+            if not test
+            else cls([None for _ in range(len(df))])
+        )
         return cls(x, labels=labels)

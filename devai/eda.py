@@ -1,6 +1,8 @@
 import plotly.express as px
 import plotly.graph_objects as go
 import panel as pn
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 pn.extension("plotly")
 
@@ -8,6 +10,7 @@ pn.extension("plotly")
 def prettify_text(s):
     s = s.replace("_", " ")
     return " ".join([i.capitalize() for i in s.split()])
+
 
 def get_pct_na(df, col, return_count=False):
     notnas = sum(df[col].notna())
@@ -20,7 +23,7 @@ def get_pct_na(df, col, return_count=False):
     return outputs
 
 
-# Panel Interactive Plots 
+# Panel Interactive Plots
 def plot_col_vals(df, col_name, normalize):
     pretty_col_name = prettify_text(col_name)
     title = pretty_col_name
@@ -59,3 +62,16 @@ def dropdown_cols(df, col=None, normalize=False):
         return plot_col_vals(df, col_dropdown, normalize=False)
 
     return _plot
+
+
+def plot_confusion_matrix(cm, labels=None, xlabel="", ylabel=""):
+    """
+    plots a sklearn confusion matrix
+    > cm = confusion_matrix(preds,actuals)
+    > plot_confusion_matrix(cm)
+    """
+    sns.heatmap(cm, annot=True, xticklabels=labels,
+                yticklabels=labels, fmt='g',)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.show()

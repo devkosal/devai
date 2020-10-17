@@ -144,37 +144,47 @@ class Learner():
             self.cbs, key=lambda x: x._order): res = cb(cb_name) and res
         return res
 
-
-def get_raw_preds(self, dataset="valid", return_x=False):
-    """
-    returns preds and actual values for y. 
-    Note that callbacks are not used in the prediction generation
-    """
-    with torch.no_grad():
-        if dataset == "valid":
-            self.dl = self.data.valid_dl
-        elif dataset == "train":
-            self.dl = self.data.train_dl
-        else:
-            raise ValueError(
-                f"{dataset} is not a valid dataset. Please enter either 'train' or 'valid'"
-            )
-        yps = []  # actual y
-        ybs = []  # predicted y
-        if return_x:
-            xbs = []
-        for i, (xb, yb) in enumerate(tqdm(self.dl)):
-            self.iter = i
-            self.xb, self.yb = xb, yb
-            self("begin_batch")
-            ybs.append(yb)
-            yps.append(self.model(self.xb))
+    def get_raw_preds(self, dataset="valid", return_x=False):
+        """
+        returns preds and actual values for y. 
+        Note that callbacks are not used in the prediction generation
+        returns predicted, actual (and x if requested in args)
+        """
+        with torch.no_grad():
+            if dataset == "valid":
+                self.dl = self.data.valid_dl
+            elif dataset == "train":
+                self.dl = self.data.train_dl
+            else:
+                raise ValueError(
+                    f"{dataset} is not a valid dataset. Please enter either 'train' or 'valid'"
+                )
+            yps = []  # predicted y
+            ybs = []  # actual y
             if return_x:
-                xbs.append(xb)
-    outputs = (
-        yps,
-        ybs,
-    )
-    if return_x:
-        outputs += (xbs,)
-    return outputs
+                xbs = []  # x
+            for i, (xb, yb) in enumerate(tqdm(self.dl)):
+                self.iter = i
+                self.xb, self.yb = xb, yb
+                self("begin_batch")
+                ybs.append(yb)
+                yps.append(self.model(self.xb))
+                if return_x:
+                    xbs.append(xb)
+        outputs = (
+            yps,
+            ybs,
+        )
+        if return_x:
+            outputs += (xbs,)
+        return outputs
+
+    def get_preds(self, dataset="valid", **kwargs):
+        """
+        builds on top of raw preds functions. May not work for all models as 
+        this assumes the model output is a tensor (and not a tuple)
+        """
+        output = self.get_raw_preds(dataset=dataset, **kwargs)
+        preds = torch.argmax(torch.cat(output[0]), 1)
+        actuals = torch.cat(output[1])
+        return preds, actuals

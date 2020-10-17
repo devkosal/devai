@@ -13,14 +13,32 @@
 
 
 from pathlib import Path
+import json
 
 
-# def filter_files(files, include=[], exclude=[]):
-#     for incl in include:
-#         files = [f for f in files if incl in f.name]
-#     for excl in exclude:
-#         files = [f for f in files if excl not in f.name]
-#     return sorted(files)
+class Config(dict):
+    """config object to store task specific information"""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+    def set(self, key, val):
+        self[key] = val
+        setattr(self, key, val)
+
+    def save_to_json(self, output_file):
+        json.dump(self.__dict__, open(output_file, "w"),
+                  indent=4, sort_keys=True)
+
+    @classmethod
+    def from_json(cls, json_path):
+        config_dict = json.load(open(json_path, "r"))
+        return cls(**config_dict)
+
+    def __repr__(self):
+        return json.dumps(self.__dict__, indent=1)
 
 
 def filter_files(files, include=[], exclude=[], extension_filtering=False):
@@ -59,3 +77,7 @@ def ls(x, recursive=False, include=[], exclude=[], extension_filtering=False):
 
 
 Path.ls = ls
+
+
+def noop(x):
+    return x
