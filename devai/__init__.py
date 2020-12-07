@@ -44,7 +44,7 @@ class Config(dict):
 def filter_files(files, include=[], exclude=[], extension_filtering=False):
     """
     filters a list of files based on filenames or extensions
-    files: list of files in a directory
+    files: list of pathlib file paths
     include: only keep these file extensions
     exclude: remove these file extensions
     """

@@ -3,6 +3,7 @@ import plotly.graph_objects as go
 import panel as pn
 import seaborn as sns
 import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
 
 pn.extension("plotly")
 
@@ -64,12 +65,15 @@ def dropdown_cols(df, col=None, normalize=False):
     return _plot
 
 
-def plot_confusion_matrix(cm, labels=None, xlabel="", ylabel=""):
+def plot_confusion_matrix(actuals=None, predictions=None, cm=None, labels=None, xlabel="Predicted", ylabel="Actual"):
     """
     plots a sklearn confusion matrix
-    > cm = confusion_matrix(preds,actuals)
+    > cm = confusion_matrix(preds,actuals).alternatively to cm, actuals and predictions can be passed. 
     > plot_confusion_matrix(cm)
     """
+    assert cm is not None or (actuals is not None and predictions is not None)
+    if cm is None:
+        cm = confusion_matrix(actuals, predictions)
     sns.heatmap(cm, annot=True, xticklabels=labels,
                 yticklabels=labels, fmt='g',)
     plt.xlabel(xlabel)
